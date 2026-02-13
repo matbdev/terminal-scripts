@@ -1,0 +1,113 @@
+#!/bin/bash
+
+# Vars
+ORIGIN_PATH="$HOME/Downloads"
+CURRENT_TIMESTAMP=$(date "+%Y-%m-%d_%H-%M-%S")
+LOG_PATH="$HOME/.local/state/file_organizator"
+LOG_FILE_NAME="file_organizator_${CURRENT_TIMESTAMP}.log"
+WHERE_LOG="${LOG_PATH}/${LOG_FILE_NAME}"
+
+# Creates dir if not exists
+if [ ! -d "$LOG_PATH" ]; then
+    mkdir -p "$LOG_PATH"
+fi
+
+# Creates file
+touch "$WHERE_LOG"
+
+echo "File movement information related to the script execution in ${CURRENT_TIMESTAMP}" > "$WHERE_LOG"
+
+# Color related functions 
+vermelho() { echo -e "\e[31m$1\e[0m"; }
+verde()    { echo -e "\e[32m$1\e[0m"; }
+amarelo()  { echo -e "\e[33m$1\e[0m"; }
+azul()     { echo -e "\e[34m$1\e[0m"; }
+
+# Function that prints and appends info in log file
+print_and_log() {
+    local color_for_terminal=$1
+    $1 "$2"
+    echo "$2" >> "$WHERE_LOG"
+}
+
+# Loop throught all files
+for file in "$ORIGIN_PATH"/*; do
+    DESTINATION_PATH=""
+
+    # Skip if dir
+    if [ -d "$file" ]; then
+        continue
+    fi
+
+    # File information
+    file_name="${file##*/}"
+    base_file_name="${file_name%.*}"
+    file_type="${file##*.}"
+    file_type_lower="${file_type,,}"
+
+    # Case structure
+    case "$file_type_lower" in
+        # Documents
+        pdf|doc|docx|txt|odt|rtf|epub|md|csv|xlsx|pptx)
+            DESTINATION_PATH="$HOME/Documentos/Downloads"
+            ;;
+        # Images
+        jpg|jpeg|png|gif|svg|webp|bmp|tiff|ico)
+            DESTINATION_PATH="$HOME/Imagens/Downloads"
+            ;;
+        # Videos
+        mp4|mkv|avi|mov|wmv|flv|webm)
+            DESTINATION_PATH="$HOME/Vídeos/Downloads"
+            ;;
+        # Compacted
+        zip|rar|7z|tar|gz|bz2|xz)
+            DESTINATION_PATH="$HOME/Downloads/Compactados"
+            ;;
+        # Installers/Executables
+        deb|appimage|sh|rpm|iso|run|exe|msi)
+            DESTINATION_PATH="$HOME/Downloads/Instaladores"
+            ;;
+        # Audios
+        mp3|wav|flac|aac|ogg)
+            DESTINATION_PATH="$HOME/Música/Downloads"
+            ;;
+        # Default
+        *)
+            continue
+            ;;
+    esac
+
+    # Creates dir if not exists
+    if [ ! -d "$DESTINATION_PATH" ]; then
+        mkdir -p "$DESTINATION_PATH"
+    fi
+
+    new_file_path="$DESTINATION_PATH/$file_name"
+
+    # If the file already exists, it's renamed using the birth date
+    if [ -e "$new_file_path" ]; then
+        print_and_log "vermelho" "Conflict detected: $file_name"
+
+        # Modification timestamp in the file name
+        timestamp=$(date -r "$file" "+%Y-%m-%d_%H-%M-%S")
+        new_file_path="$DESTINATION_PATH/${base_file_name}_${timestamp}.${file_type}"
+
+        # For security reasons - in case of same modification timestamp
+        counter=1
+        while [ -e "$new_file_path" ]; do
+            # Adds the counter to the end of the file
+            new_file_path="$DESTINATION_PATH/${base_file_name}_${timestamp}_${counter}.${file_type}"
+            ((counter++))
+        done
+
+        print_and_log "amarelo" "Renaming to: ${new_file_path##*/}"
+    fi
+
+    # Final message
+    print_and_log "azul" "Moving $file_name -> $DESTINATION_PATH"
+    mv "$file" "$new_file_path"
+done
+
+echo ""
+verde "Process finished successfully!"
+azul "The information was stored in ${WHERE_LOG}!"

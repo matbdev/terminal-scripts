@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# Abre o único arquivo .mpr (Mendix Project) encontrado no diretório ATUAL.
+#
+# Sai com erro se zero ou mais de um arquivo .mpr for encontrado.
+# Usa explorer.exe para abrir o app no Windows.
+#
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+# Encontra arquivos .mpr (Mendix) apenas no diretório atual (não recursivo).
+# Usamos -maxdepth 1 porque o .mpr está sempre na raiz do projeto.
+readarray -t mpr_files < <(find . -maxdepth 1 -type f -name "*.mpr")
+
+# Pega a contagem de arquivos .mpr encontrados.
+file_count="${#mpr_files[@]}"
+
+# Trata os casos baseado na contagem de arquivos.
+if [ "${file_count}" -eq 0 ]; then
+    echo "Erro: Nenhum arquivo .mpr encontrado no diretório atual." >&2
+    exit 1
+fi
+
+if [ "${file_count}" -gt 1 ]; then
+    echo "Erro: Múltiplos arquivos .mpr encontrados. Esperava exatamente um." >&2
+    printf "Arquivos encontrados:\n" >&2
+    printf " - %s\n" "${mpr_files[@]}" >&2
+    exit 1
+fi
+
+# Exatamente um arquivo foi encontrado.
+target_file="${mpr_files[0]}"
+
+echo "Abrindo '${target_file}' no Mendix Studio Pro..."
+
+# Converte o caminho do WSL para um caminho Windows e abre com o programa padrão.
+# O '&' executa o comando em segundo plano, liberando o terminal.
+explorer.exe "$(wslpath -w "${target_file}")" &

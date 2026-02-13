@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+# ==========================================
+# Funções para pintar saída
+# ==========================================
+vermelho() { echo -e "\e[31m$1\e[0m"; }
+verde()    { echo -e "\e[32m$1\e[0m"; }
+amarelo()  { echo -e "\e[33m$1\e[0m"; }
+azul()     { echo -e "\e[34m$1\e[0m"; }
+
+# Sai se der algum erro crítico
+set -e
+
+# Constantes
+COMMIT_MSG=""
+OPEN_CICD=false
+
+# Analisa tudo que foi digitado depois do comando
+for arg in "$@"; do
+    if [ "$arg" == "--cicd" ]; then
+        OPEN_CICD=true
+    else
+        COMMIT_MSG="$arg"
+    fi
+done
+
+# Impede de rodar se não tiver mensagem
+if [ -z "$COMMIT_MSG" ]; then
+    vermelho "Erro: Você precisa informar a mensagem do commit."
+    azul "Uso: save_changes \"sua mensagem aqui\" [--cicd]"
+    exit 1
+fi
+
+# Git
+git add .
+git commit -m "$COMMIT_MSG"
+git push
+
+# CI/CD
+if [ "$OPEN_CICD" = true ]; then
+    REMOTE_URL=$(git config --get remote.origin.url)
+    
+    # Converte a URL do Git para uma URL de Navegador
+    if [[ "$REMOTE_URL" == git@* ]]; then
+        # git@gitlab.empresa.com:grupo/repo.git -> https://gitlab.empresa.com/grupo/repo
+        WEB_URL=$(echo "$REMOTE_URL" | sed -e 's/^git@//' -e 's/:/\//' -e 's/\.git$//')
+        WEB_URL="https://$WEB_URL"
+    elif [[ "$REMOTE_URL" == https://* ]]; then
+        # https://gitlab.empresa.com/grupo/repo.git -> https://gitlab.empresa.com/grupo/repo
+        WEB_URL=$(echo "$REMOTE_URL" | sed -e 's/\.git$//')
+    else
+        vermelho "Formato de URL Git não reconhecido para abrir no navegador."
+        exit 0
+    fi
+
+    # Monta a URL da página de pipelines do GitLab
+    PIPELINE_URL="${WEB_URL}/-/pipelines"
+
+    # O truque do WSL/Windows que aperfeiçoamos antes!
+    cmd.exe /c start "" "$PIPELINE_URL" > /dev/null 2>&1
+fi
+
+verde "Processo finalizado!"

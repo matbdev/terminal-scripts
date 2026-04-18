@@ -1,40 +1,38 @@
 #!/bin/bash
 #
-# Abre o único arquivo .mpr (Mendix Project) encontrado no diretório ATUAL.
-#
-# Sai com erro se zero ou mais de um arquivo .mpr for encontrado.
-# Usa explorer.exe para abrir o app no Windows.
+# DESCRIPTION:
+# Opens the unique .mpr (Mendix Project) file found in the CURRENT directory.
+# Exits with an error if zero or more than one .mpr file is found.
+# Uses explorer.exe to open the app on Windows from WSL.
 #
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
-# Encontra arquivos .mpr (Mendix) apenas no diretório atual (não recursivo).
-# Usamos -maxdepth 1 porque o .mpr está sempre na raiz do projeto.
+# Finds .mpr (Mendix) files only in the current directory
 readarray -t mpr_files < <(find . -maxdepth 1 -type f -name "*.mpr")
 
-# Pega a contagem de arquivos .mpr encontrados.
+# Gets the count of .mpr files found.
 file_count="${#mpr_files[@]}"
 
-# Trata os casos baseado na contagem de arquivos.
+# Handles cases based on file count.
 if [ "${file_count}" -eq 0 ]; then
-    echo "Erro: Nenhum arquivo .mpr encontrado no diretório atual." >&2
+    echo "Error: No .mpr file found in the current directory." >&2
     exit 1
 fi
 
 if [ "${file_count}" -gt 1 ]; then
-    echo "Erro: Múltiplos arquivos .mpr encontrados. Esperava exatamente um." >&2
-    printf "Arquivos encontrados:\n" >&2
+    echo "Error: Multiple .mpr files found. Expected exactly one." >&2
+    printf "Found files:\n" >&2
     printf " - %s\n" "${mpr_files[@]}" >&2
     exit 1
 fi
 
-# Exatamente um arquivo foi encontrado.
+# Exactly one file was found.
 target_file="${mpr_files[0]}"
 
-echo "Abrindo '${target_file}' no Mendix Studio Pro..."
+echo "Opening '${target_file}' in Mendix Studio Pro..."
 
-# Converte o caminho do WSL para um caminho Windows e abre com o programa padrão.
-# O '&' executa o comando em segundo plano, liberando o terminal.
+# Converts WSL path to a Windows path and opens with default program.
 explorer.exe "$(wslpath -w "${target_file}")" &

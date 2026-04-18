@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# DESCRIPTION:
+# Organizes files in the Downloads directory by automatically moving them
+# into specific folders based on their extensions (Documents, Images, Videos, etc.).
+# Generates a log file with the movement history.
+#
 
 # Vars
 ORIGIN_PATH="$HOME/Downloads"
@@ -18,10 +24,10 @@ touch "$WHERE_LOG"
 echo "File movement information related to the script execution in ${CURRENT_TIMESTAMP}" > "$WHERE_LOG"
 
 # Color related functions 
-vermelho() { echo -e "\e[31m$1\e[0m"; }
-verde()    { echo -e "\e[32m$1\e[0m"; }
-amarelo()  { echo -e "\e[33m$1\e[0m"; }
-azul()     { echo -e "\e[34m$1\e[0m"; }
+red()    { echo -e "\e[31m$1\e[0m"; }
+green()  { echo -e "\e[32m$1\e[0m"; }
+yellow() { echo -e "\e[33m$1\e[0m"; }
+blue()   { echo -e "\e[34m$1\e[0m"; }
 
 # Function that prints and appends info in log file
 print_and_log() {
@@ -49,27 +55,35 @@ for file in "$ORIGIN_PATH"/*; do
     case "$file_type_lower" in
         # Documents
         pdf|doc|docx|txt|odt|rtf|epub|md|csv|xlsx|pptx)
-            DESTINATION_PATH="$HOME/Documentos/Downloads"
+            DESTINATION_PATH="$HOME/Documents/Downloads"
             ;;
         # Images
         jpg|jpeg|png|gif|svg|webp|bmp|tiff|ico)
-            DESTINATION_PATH="$HOME/Imagens/Downloads"
+            DESTINATION_PATH="$HOME/Images/Downloads"
             ;;
         # Videos
         mp4|mkv|avi|mov|wmv|flv|webm)
-            DESTINATION_PATH="$HOME/Vídeos/Downloads"
+            DESTINATION_PATH="$HOME/Videos/Downloads"
             ;;
         # Compacted
         zip|rar|7z|tar|gz|bz2|xz)
-            DESTINATION_PATH="$HOME/Downloads/Compactados"
+            DESTINATION_PATH="$HOME/Downloads/Compacted"
             ;;
         # Installers/Executables
         deb|appimage|sh|rpm|iso|run|exe|msi)
-            DESTINATION_PATH="$HOME/Downloads/Instaladores"
+            DESTINATION_PATH="$HOME/Downloads/Installers"
             ;;
         # Audios
         mp3|wav|flac|aac|ogg)
-            DESTINATION_PATH="$HOME/Música/Downloads"
+            DESTINATION_PATH="$HOME/Music/Downloads"
+            ;;
+        # Packet Tracer
+        pka|pkt)
+            DESTINATION_PATH="$HOME/Downloads/Packet-Tracer"
+            ;;
+        # Fonts
+        ttf)
+            DESTINATION_PATH="$HOME/Downloads/Fonts"
             ;;
         # Default
         *)
@@ -86,7 +100,7 @@ for file in "$ORIGIN_PATH"/*; do
 
     # If the file already exists, it's renamed using the birth date
     if [ -e "$new_file_path" ]; then
-        print_and_log "vermelho" "Conflict detected: $file_name"
+        print_and_log "red" "Conflict detected: $file_name"
 
         # Modification timestamp in the file name
         timestamp=$(date -r "$file" "+%Y-%m-%d_%H-%M-%S")
@@ -100,14 +114,14 @@ for file in "$ORIGIN_PATH"/*; do
             ((counter++))
         done
 
-        print_and_log "amarelo" "Renaming to: ${new_file_path##*/}"
+        print_and_log "yellow" "Renaming to: ${new_file_path##*/}"
     fi
 
     # Final message
-    print_and_log "azul" "Moving $file_name -> $DESTINATION_PATH"
+    print_and_log "blue" "Moving $file_name -> $DESTINATION_PATH"
     mv "$file" "$new_file_path"
 done
 
 echo ""
-verde "Process finished successfully!"
-azul "The information was stored in ${WHERE_LOG}!"
+green "Process finished successfully!"
+blue "The information was stored in ${WHERE_LOG}!"

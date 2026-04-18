@@ -1,57 +1,63 @@
 #!/usr/bin/env bash
+#
+# DESCRIPTION:
+# Opens the current Git repository directly in Databricks Workspace.
+# It requires initial configuration (Host, Workspace ID, Email) which is saved for future uses.
+# The repository must be cloned in the path defined in the configuration on databricks.
+#
 
 # ==========================================
-# Funções para pintar saída
+# Functions
 # ==========================================
-vermelho() { echo -e "\e[31m$1\e[0m"; }
-verde()    { echo -e "\e[32m$1\e[0m"; }
-amarelo()  { echo -e "\e[33m$1\e[0m"; }
-azul()     { echo -e "\e[34m$1\e[0m"; }
+red()    { echo -e "\e[31m$1\e[0m"; }
+green()  { echo -e "\e[32m$1\e[0m"; }
+yellow() { echo -e "\e[33m$1\e[0m"; }
+blue()   { echo -e "\e[34m$1\e[0m"; }
 
-# Sai do script se der erro
+# Exit script on error
 set -e
 
-# Verifica se está num repositório Git
+# Checks if inside a Git repository
 if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-    vermelho "Erro: Você não está dentro de um repositório Git."
+    red "Error: You are not inside a Git repository."
     exit 1
 fi
 
-# Pega o nome da pasta do repo
+# Gets the repo folder name
 REPO_ROOT=$(git rev-parse --show-toplevel)
 REPO_NAME=$(basename "$REPO_ROOT")
 
 # ==========================================
-# CONFIGURAÇÕES
+# Config
 # ==========================================
 CONFIG_FILE="$HOME/.config/dbopen.conf"
 
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 else
-    azul "Primeiro acesso detectado! Configurando dbopen."
+    blue "First access detected! Configuring dbopen."
     
-    # Lendo diretamente para as variáveis finais para não dar erro na hora de salvar
-    read -p "Digite o seu usuário (email completo): " DBX_USER
-    read -p "Digite o Workspace ID do Databricks: " WORKSPACE_ID
-    read -p "Digite o caminho root até as pastas do git: " GIT_ROOT_PATH
-    read -p "Digite o DBX HOST (ex: https://adb-1234.net): " DBX_HOST
+    # Read directly into final variables to avoid errors when saving
+    read -p "Type your user (full email): " DBX_USER
+    read -p "Type the Databricks Workspace ID: " WORKSPACE_ID
+    read -p "Type the root path to git folders: " GIT_ROOT_PATH
+    read -p "Type the DBX HOST (ex: https://adb-1234.net): " DBX_HOST
     
-    # Garante que a pasta .config existe e salva as respostas no formato CHAVE="VALOR"
+    # Ensures the .config folder exists and saves the answers in KEY="VALUE" format
     mkdir -p "$HOME/.config"
     echo "DBX_USER=\"$DBX_USER\"" > "$CONFIG_FILE"
     echo "WORKSPACE_ID=\"$WORKSPACE_ID\"" >> "$CONFIG_FILE"
     echo "GIT_ROOT_PATH=\"$GIT_ROOT_PATH\"" >> "$CONFIG_FILE"
     echo "DBX_HOST=\"$DBX_HOST\"" >> "$CONFIG_FILE"
     
-    verde "Configurações salvas com sucesso em $CONFIG_FILE!"
+    green "Settings successfully saved in $CONFIG_FILE!"
 fi
 
-# Monta a URL final usando todas as variáveis configuradas
+# Builds the final URL using all configured variables
 TARGET_URL="${DBX_HOST}/?o=${WORKSPACE_ID}#workspace/Workspace/Users/${DBX_USER}/${GIT_ROOT_PATH}/${REPO_NAME}"
 
-azul "Abrindo $REPO_NAME no Databricks..."
+blue "Opening $REPO_NAME in Databricks..."
 echo "URL: $TARGET_URL"
 
-# Chama o Windows para abrir o navegador
+# Calls Windows to open the browser
 cmd.exe /c start "" "$TARGET_URL" > /dev/null 2>&1

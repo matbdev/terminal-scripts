@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# Opens the unique .pbip file found recursively from the current directory.
-#
+# DESCRIPTION:
+# Opens the unique .pbip (Power BI) file found recursively from the current directory.
 # Exits with an error if zero or more than one .pbip file is found.
-# This version uses explorer.exe to bypass WindowsApps permission issues.
+# Uses explorer.exe to open the app on Windows from WSL.
 #
 
 set -o errexit
@@ -12,7 +12,6 @@ set -o pipefail
 
 # Find .pbip files recursively from the current directory.
 # Store file paths in an array.
-# The readarray command is safer for paths with spaces.
 readarray -t pbip_files < <(find . -type f -name "*.pbip")
 
 # Get the number of .pbip files found.
@@ -37,5 +36,4 @@ target_file="${pbip_files[0]}"
 echo "Opening '${target_file}' in Power BI..."
 
 # Convert the WSL path to a Windows path and open it with the default program.
-# The '&' runs the command in the background, freeing the terminal.
 explorer.exe "$(wslpath -w "${target_file}")" &
